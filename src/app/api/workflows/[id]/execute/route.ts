@@ -4,12 +4,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { AIService } from "@/lib/ai";
-import { SUBSCRIPTION_PLANS } from "@/types/subscription";
+import { SUBSCRIPTION_PLANS, SubscriptionTier } from "@/types/subscription";
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -27,12 +27,12 @@ export async function POST(
       return new NextResponse("User not found", { status: 404 });
     }
 
-    const subscriptionTier = user.subscription?.tier || "free";
+    const subscriptionTier = (user.subscription?.tier || "free") as SubscriptionTier;
     const plan = SUBSCRIPTION_PLANS[subscriptionTier];
 
     // Get workflow
     const workflow = await prisma.workflow.findUnique({
-      where: { id: params.id },
+      where: { id: context.params.id },
     });
 
     if (!workflow) {
@@ -72,7 +72,6 @@ export async function POST(
 
     // Create workflow engine
     const engine = new WorkflowEngine(
-      aiService,
       workflow.nodes as WorkflowNode[],
       workflow.edges as WorkflowEdge[]
     );
@@ -86,9 +85,9 @@ export async function POST(
         workflowId: workflow.id,
         userId: session.user.id,
         status: result.success ? "success" : "failed",
-        output: result.output,
+        output: JSON.stringify(result.results),
         error: result.error,
-        executionTime: result.executionTime,
+        executionTime: Date.now(),
       },
     });
 
