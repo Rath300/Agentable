@@ -1,4 +1,4 @@
-import { WorkflowNode, WorkflowEdge, NodeType } from "@/types/workflow";
+import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
 interface NodeConfig {
   type: string;

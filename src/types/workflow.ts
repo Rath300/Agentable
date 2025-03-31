@@ -2,10 +2,17 @@ import { Node, Edge } from "reactflow";
 
 export type NodeType = "trigger" | "action" | "condition";
 
+export interface NodeConfig {
+  type: string;
+  data?: unknown;
+  inputs?: unknown[];
+  [key: string]: unknown;
+}
+
 export interface WorkflowNodeData {
   label: string;
   type: NodeType;
-  config: Record<string, any>;
+  config: NodeConfig;
 }
 
 export type WorkflowNode = Node<WorkflowNodeData>;
