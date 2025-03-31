@@ -73,7 +73,8 @@ export async function POST(
     // Create workflow engine
     const engine = new WorkflowEngine(
       workflow.nodes as WorkflowNode[],
-      workflow.edges as WorkflowEdge[]
+      workflow.edges as WorkflowEdge[],
+      aiService
     );
 
     // Execute workflow

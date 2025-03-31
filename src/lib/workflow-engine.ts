@@ -1,4 +1,5 @@
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
+import { AIService } from "@/lib/ai";
 
 interface NodeConfig {
   type: string;
@@ -20,10 +21,12 @@ interface WorkflowResult {
 export class WorkflowEngine {
   private nodes: WorkflowNode[];
   private edges: WorkflowEdge[];
+  private aiService: AIService;
 
-  constructor(nodes: WorkflowNode[], edges: WorkflowEdge[]) {
+  constructor(nodes: WorkflowNode[], edges: WorkflowEdge[], aiService: AIService) {
     this.nodes = nodes;
     this.edges = edges;
+    this.aiService = aiService;
   }
 
   private async executeNode(node: WorkflowNode): Promise<NodeResult> {
