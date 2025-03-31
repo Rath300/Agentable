@@ -34,67 +34,82 @@ const nodeTypes: NodeTypes = {
 };
 
 function WorkflowBuilderContent() {
-  const { nodes : storeNodes, edges: storeEdges, setNodes, setEdges } = useWorkflowStore();
+  const { nodes: storeNodes, edges: storeEdges, setNodes, setEdges } = useWorkflowStore();
   const [nodes, setNodesState, onNodesChange] = useNodesState<WorkflowNodeData>(storeNodes);
   const [edges, setEdgesState, onEdgesChange] = useEdgesState<WorkflowEdge>(storeEdges);
 
   const onConnect = useCallback(
     (params: Connection) => {
-      if (!params.source || !params.target) return;
-      
-      const newEdge: WorkflowEdge = {
-        id: generateId(),
-        source: params.source,
-        target: params.target,
-        sourceHandle: params.sourceHandle,
-        targetHandle: params.targetHandle,
-        type: "default",
-        animated: true,
-      };
-      
-      const updatedEdges = addEdge(newEdge, edges) as WorkflowEdge[];
-      setEdges(updatedEdges);
-      setEdgesState(updatedEdges);
+      try {
+        if (!params.source || !params.target) return;
+        
+        const newEdge: WorkflowEdge = {
+          id: generateId(),
+          source: params.source,
+          target: params.target,
+          sourceHandle: params.sourceHandle,
+          targetHandle: params.targetHandle,
+          type: "default",
+          animated: true,
+        };
+        
+        const updatedEdges = addEdge(newEdge, edges) as WorkflowEdge[];
+        setEdges(updatedEdges);
+        setEdgesState(updatedEdges);
+      } catch (error) {
+        console.error("Error connecting nodes:", error);
+      }
     },
     [setEdges, setEdgesState, edges]
   );
 
   const onNodeDragStop = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      const updateNodes = (nds: WorkflowNode[]) =>
-        nds.map((n) => (n.id === node.id ? { ...n, position: node.position } : n));
-      setNodes(updateNodes(nodes));
-      setNodesState(updateNodes(nodes));
+      try {
+        const updateNodes = (nds: WorkflowNode[]) =>
+          nds.map((n) => (n.id === node.id ? { ...n, position: node.position } : n));
+        setNodes(updateNodes(nodes));
+        setNodesState(updateNodes(nodes));
+      } catch (error) {
+        console.error("Error updating node position:", error);
+      }
     },
     [setNodes, setNodesState, nodes]
   );
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
-      event.preventDefault();
+      try {
+        event.preventDefault();
 
-      const reactFlowBounds = document.querySelector(".react-flow")?.getBoundingClientRect();
-      if (!reactFlowBounds) return;
+        const reactFlowBounds = document.querySelector(".react-flow")?.getBoundingClientRect();
+        if (!reactFlowBounds) {
+          console.error("React Flow container not found");
+          return;
+        }
 
-      const nodeData = JSON.parse(event.dataTransfer.getData("application/reactflow"));
-      const position = {
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
-      };
+        const nodeData = JSON.parse(event.dataTransfer.getData("application/reactflow"));
+        const position = {
+          x: event.clientX - reactFlowBounds.left,
+          y: event.clientY - reactFlowBounds.top,
+        };
 
-      const newNode: WorkflowNode = {
-        id: generateId(),
-        type: "custom",
-        position,
-        data: {
-          label: nodeData.label,
-          type: nodeData.type,
-          config: {},
-        },
-      };
+        const newNode: WorkflowNode = {
+          id: generateId(),
+          type: "custom",
+          position,
+          data: {
+            label: nodeData.label,
+            type: nodeData.type,
+            config: {},
+          },
+        };
 
-      setNodes([...nodes, newNode]);
-      setNodesState([...nodes, newNode]);
+        setNodes([...nodes, newNode]);
+        setNodesState([...nodes, newNode]);
+      } catch (error) {
+        console.error("Error adding new node:", error);
+      }
     },
     [setNodes, setNodesState, nodes]
   );
@@ -120,6 +135,7 @@ function WorkflowBuilderContent() {
         onDragOver={onDragOver}
         nodeTypes={nodeTypes}
         fitView
+        attributionPosition="bottom-left"
       >
         <Background />
         <Controls />

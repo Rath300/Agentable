@@ -1,3 +1,5 @@
+"use client";
+
 import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -7,8 +9,6 @@ import {
   Workflow,
   FileText,
   Settings,
-  PlayCircle,
-  PauseCircle,
 } from "lucide-react";
 
 interface MainLayoutProps {
@@ -29,13 +29,13 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         {/* Sidebar */}
-        <div className="hidden md:flex md:w-64 md:flex-col">
+        <div className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
           <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
             <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
               <div className="flex flex-shrink-0 items-center px-4">
                 <h1 className="text-xl font-bold text-gray-900">NoCode AI Agent</h1>
               </div>
-              <nav className="mt-5 flex-1 space-y-1 bg-white px-2">
+              <nav className="mt-5 flex-1 space-y-1 bg-white px-2" aria-label="Main navigation">
                 {navigation.map((item) => {
                   const isActive = pathname === item.href;
                   return (
@@ -48,6 +48,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                           ? "bg-gray-100 text-gray-900"
                           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                       )}
+                      aria-current={isActive ? "page" : undefined}
                     >
                       <item.icon
                         className={cn(
@@ -68,7 +69,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
 
         {/* Main content */}
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col md:pl-64">
           <main className="flex-1">
             <div className="py-6">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
