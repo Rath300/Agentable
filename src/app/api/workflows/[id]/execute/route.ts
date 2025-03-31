@@ -9,7 +9,7 @@ import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -32,7 +32,7 @@ export async function POST(
 
     // Get workflow
     const workflow = await prisma.workflow.findUnique({
-      where: { id: context.params.id },
+      where: { id: params.id },
     });
 
     if (!workflow) {
