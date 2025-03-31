@@ -18,7 +18,7 @@ import ReactFlow, {
 import { Background } from "@reactflow/background";
 import { Controls } from "@reactflow/controls";
 import { MiniMap } from "@reactflow/minimap";
-import "reactflow/dist/style.css";
+import "@reactflow/core/dist/style.css";
 import { useWorkflowStore } from "@/store/workflow-store";
 import { WorkflowNode, WorkflowEdge, WorkflowNodeData } from "@/types/workflow";
 import { NodeToolbar } from "./node-toolbar";
