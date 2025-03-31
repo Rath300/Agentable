@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
+import { WorkflowNode, WorkflowEdge, NodeType } from "@/types/workflow";
 import { generateId } from "@/lib/utils";
 
 interface WorkflowState {
@@ -7,7 +7,7 @@ interface WorkflowState {
   edges: WorkflowEdge[];
   setNodes: (nodes: WorkflowNode[]) => void;
   setEdges: (edges: WorkflowEdge[]) => void;
-  addNode: (nodeData: { type: string; label: string }) => void;
+  addNode: (nodeData: { type: NodeType; label: string }) => void;
   updateNode: (nodeId: string, data: Partial<WorkflowNode>) => void;
   deleteNode: (nodeId: string) => void;
   addEdge: (source: string, target: string) => void;
