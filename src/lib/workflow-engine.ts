@@ -1,4 +1,4 @@
-import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
+import { WorkflowNode, WorkflowEdge, NodeType } from "@/types/workflow";
 
 interface NodeConfig {
   type: string;
@@ -30,12 +30,12 @@ export class WorkflowEngine {
     try {
       const config = node.data.config as NodeConfig;
       switch (node.data.type) {
-        case "input":
-          return await this.executeInputNode(config);
-        case "process":
-          return await this.executeProcessNode(config);
-        case "output":
-          return await this.executeOutputNode(config);
+        case "trigger":
+          return await this.executeTriggerNode(config);
+        case "action":
+          return await this.executeActionNode(config);
+        case "condition":
+          return await this.executeConditionNode(config);
         default:
           throw new Error(`Unknown node type: ${node.data.type}`);
       }
@@ -47,24 +47,24 @@ export class WorkflowEngine {
     }
   }
 
-  private async executeInputNode(config: NodeConfig): Promise<NodeResult> {
-    // Implement input node logic
+  private async executeTriggerNode(config: NodeConfig): Promise<NodeResult> {
+    // Implement trigger node logic
     return {
       success: true,
       data: config.data,
     };
   }
 
-  private async executeProcessNode(config: NodeConfig): Promise<NodeResult> {
-    // Implement process node logic
+  private async executeActionNode(config: NodeConfig): Promise<NodeResult> {
+    // Implement action node logic
     return {
       success: true,
       data: config.data,
     };
   }
 
-  private async executeOutputNode(config: NodeConfig): Promise<NodeResult> {
-    // Implement output node logic
+  private async executeConditionNode(config: NodeConfig): Promise<NodeResult> {
+    // Implement condition node logic
     return {
       success: true,
       data: config.data,
@@ -75,7 +75,7 @@ export class WorkflowEngine {
     const inputEdges = this.edges.filter((edge) => edge.target === nodeId);
     return inputEdges.map((edge) => {
       const sourceNode = this.nodes.find((node) => node.id === edge.source);
-      return sourceNode?.data?.result;
+      return sourceNode?.data?.config?.data;
     });
   }
 
