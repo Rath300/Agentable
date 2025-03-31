@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -7,9 +7,15 @@ import { AIService } from "@/lib/ai";
 import { SUBSCRIPTION_PLANS, SubscriptionTier } from "@/types/subscription";
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
+interface RouteParams {
+  params: {
+    id: string;
+  };
+}
+
 export async function POST(
-  request: Request,
-  context: { params: { id: string } }
+  req: NextRequest,
+  { params }: RouteParams
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -32,7 +38,7 @@ export async function POST(
 
     // Get workflow
     const workflow = await prisma.workflow.findUnique({
-      where: { id: context.params.id },
+      where: { id: params.id },
     });
 
     if (!workflow) {
