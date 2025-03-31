@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { WorkflowEngine } from "@/lib/workflow-engine";
 import { AIService } from "@/lib/ai";
 import { SUBSCRIPTION_PLANS } from "@/types/subscription";
+import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
 export async function POST(
   req: Request,
@@ -72,8 +73,8 @@ export async function POST(
     // Create workflow engine
     const engine = new WorkflowEngine(
       aiService,
-      workflow.nodes as any[],
-      workflow.edges as any[]
+      workflow.nodes as WorkflowNode[],
+      workflow.edges as WorkflowEdge[]
     );
 
     // Execute workflow

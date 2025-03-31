@@ -11,7 +11,7 @@ export function NodeConfigPanel({ selectedNode }: NodeConfigPanelProps) {
   const { updateNode } = useWorkflowStore();
 
   const handleConfigChange = useCallback(
-    (key: string, value: any) => {
+    (key: string, value: string | number | boolean) => {
       if (!selectedNode) return;
 
       const updatedNode = {
