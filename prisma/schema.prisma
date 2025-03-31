@@ -43,8 +43,24 @@ model User {
   accounts      Account[]
   sessions      Session[]
   workflows     Workflow[]
+  subscription  Subscription?
+  apiKeys       Json?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+}
+
+model Subscription {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier          String   @default("free")
+  status        String   @default("active")
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean @default(false)
+  canceledAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Workflow {
@@ -55,6 +71,19 @@ model Workflow {
   edges       Json
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executions  WorkflowExecution[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model WorkflowExecution {
+  id            String   @id @default(cuid())
+  workflowId    String
+  workflow      Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  userId        String
+  status        String
+  output        Json?
+  error         String?
+  executionTime Int
+  createdAt     DateTime @default(now())
 } 
