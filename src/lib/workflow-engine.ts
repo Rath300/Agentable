@@ -1,193 +1,143 @@
-import { WorkflowNode, WorkflowEdge, WorkflowNodeData } from "@/types/workflow";
-import { AIService } from "./ai";
+import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
-export interface WorkflowExecutionResult {
-  success: boolean;
-  output: any;
-  error?: string;
-  executionTime: number;
-  nodeResults: Record<string, NodeExecutionResult>;
+interface NodeConfig {
+  type: string;
+  [key: string]: unknown;
 }
 
-interface NodeExecutionResult {
+interface NodeResult {
   success: boolean;
-  output: any;
+  data?: unknown;
   error?: string;
-  executionTime: number;
+}
+
+interface WorkflowResult {
+  success: boolean;
+  results: Record<string, NodeResult>;
+  error?: string;
 }
 
 export class WorkflowEngine {
-  private aiService: AIService;
   private nodes: WorkflowNode[];
   private edges: WorkflowEdge[];
 
-  constructor(aiService: AIService, nodes: WorkflowNode[], edges: WorkflowEdge[]) {
-    this.aiService = aiService;
+  constructor(nodes: WorkflowNode[], edges: WorkflowEdge[]) {
     this.nodes = nodes;
     this.edges = edges;
   }
 
-  async execute(): Promise<WorkflowExecutionResult> {
-    const startTime = Date.now();
-    const nodeResults: Record<string, NodeExecutionResult> = {};
-    let success = true;
-    let error: string | undefined;
-
+  private async executeNode(node: WorkflowNode): Promise<NodeResult> {
     try {
-      // Find the trigger node
-      const triggerNode = this.nodes.find((node) => node.data.type === "trigger");
-      if (!triggerNode) {
-        throw new Error("No trigger node found in workflow");
+      const config = node.data.config as NodeConfig;
+      switch (node.data.type) {
+        case "input":
+          return await this.executeInputNode(config);
+        case "process":
+          return await this.executeProcessNode(config);
+        case "output":
+          return await this.executeOutputNode(config);
+        default:
+          throw new Error(`Unknown node type: ${node.data.type}`);
       }
-
-      // Execute nodes in topological order
-      const executionOrder = this.getExecutionOrder(triggerNode.id);
-      for (const nodeId of executionOrder) {
-        const node = this.nodes.find((n) => n.id === nodeId);
-        if (!node) continue;
-
-        const result = await this.executeNode(node);
-        nodeResults[nodeId] = result;
-
-        if (!result.success) {
-          success = false;
-          error = result.error;
-          break;
-        }
-      }
-    } catch (err) {
-      success = false;
-      error = err instanceof Error ? err.message : "Unknown error occurred";
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
+  }
 
+  private async executeInputNode(config: NodeConfig): Promise<NodeResult> {
+    // Implement input node logic
     return {
-      success,
-      output: nodeResults,
-      error,
-      executionTime: Date.now() - startTime,
-      nodeResults,
+      success: true,
+      data: config.data,
     };
   }
 
-  private async executeNode(node: WorkflowNode): Promise<NodeExecutionResult> {
-    const startTime = Date.now();
-    try {
-      let output: any;
+  private async executeProcessNode(config: NodeConfig): Promise<NodeResult> {
+    // Implement process node logic
+    return {
+      success: true,
+      data: config.data,
+    };
+  }
 
-      switch (node.data.type) {
-        case "trigger":
-          output = await this.executeTriggerNode(node);
-          break;
-        case "action":
-          output = await this.executeActionNode(node);
-          break;
-        case "condition":
-          output = await this.executeConditionNode(node);
-          break;
-        default:
-          throw new Error(`Unsupported node type: ${node.data.type}`);
+  private async executeOutputNode(config: NodeConfig): Promise<NodeResult> {
+    // Implement output node logic
+    return {
+      success: true,
+      data: config.data,
+    };
+  }
+
+  private getNodeInputs(nodeId: string): unknown[] {
+    const inputEdges = this.edges.filter((edge) => edge.target === nodeId);
+    return inputEdges.map((edge) => {
+      const sourceNode = this.nodes.find((node) => node.id === edge.source);
+      return sourceNode?.data?.result;
+    });
+  }
+
+  private getNodeOutputs(nodeId: string): string[] {
+    return this.edges
+      .filter((edge) => edge.source === nodeId)
+      .map((edge) => edge.target);
+  }
+
+  public async execute(): Promise<WorkflowResult> {
+    const results: Record<string, NodeResult> = {};
+    const visited = new Set<string>();
+
+    try {
+      // Find start nodes (nodes with no incoming edges)
+      const startNodes = this.nodes.filter(
+        (node) => !this.edges.some((edge) => edge.target === node.id)
+      );
+
+      // Execute each start node and its connected nodes
+      for (const startNode of startNodes) {
+        await this.executeNodeAndDependencies(startNode, results, visited);
       }
 
       return {
         success: true,
-        output,
-        executionTime: Date.now() - startTime,
+        results,
       };
-    } catch (err) {
+    } catch (error) {
       return {
         success: false,
-        output: null,
-        error: err instanceof Error ? err.message : "Unknown error occurred",
-        executionTime: Date.now() - startTime,
+        results,
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
-  private async executeTriggerNode(node: WorkflowNode): Promise<any> {
-    const config = node.data.config;
-    switch (config.triggerType) {
-      case "webhook":
-        return { event: "webhook_triggered" };
-      case "schedule":
-        return { event: "schedule_triggered" };
-      case "manual":
-        return { event: "manual_trigger" };
-      default:
-        throw new Error(`Unsupported trigger type: ${config.triggerType}`);
-    }
-  }
+  private async executeNodeAndDependencies(
+    node: WorkflowNode,
+    results: Record<string, NodeResult>,
+    visited: Set<string>
+  ): Promise<void> {
+    if (visited.has(node.id)) return;
+    visited.add(node.id);
 
-  private async executeActionNode(node: WorkflowNode): Promise<any> {
-    const config = node.data.config;
-    switch (config.actionType) {
-      case "api":
-        return await this.executeAPIAction(config);
-      case "email":
-        return await this.executeEmailAction(config);
-      case "notification":
-        return await this.executeNotificationAction(config);
-      default:
-        throw new Error(`Unsupported action type: ${config.actionType}`);
-    }
-  }
-
-  private async executeConditionNode(node: WorkflowNode): Promise<any> {
-    const config = node.data.config;
-    const { conditionType, value1, value2 } = config;
-
-    switch (conditionType) {
-      case "equals":
-        return value1 === value2;
-      case "notEquals":
-        return value1 !== value2;
-      case "contains":
-        return String(value1).includes(String(value2));
-      case "greaterThan":
-        return Number(value1) > Number(value2);
-      case "lessThan":
-        return Number(value1) < Number(value2);
-      default:
-        throw new Error(`Unsupported condition type: ${conditionType}`);
-    }
-  }
-
-  private async executeAPIAction(config: any): Promise<any> {
-    const { url, method, headers, body } = config;
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: JSON.stringify(body),
-    });
-    return response.json();
-  }
-
-  private async executeEmailAction(config: any): Promise<any> {
-    // Implement email sending logic
-    return { status: "email_sent" };
-  }
-
-  private async executeNotificationAction(config: any): Promise<any> {
-    // Implement notification sending logic
-    return { status: "notification_sent" };
-  }
-
-  private getExecutionOrder(startNodeId: string): string[] {
-    const visited = new Set<string>();
-    const order: string[] = [];
-
-    const visit = (nodeId: string) => {
-      if (visited.has(nodeId)) return;
-      visited.add(nodeId);
-
-      const outgoingEdges = this.edges.filter((edge) => edge.source === nodeId);
-      for (const edge of outgoingEdges) {
-        visit(edge.target);
-      }
-
-      order.push(nodeId);
+    // Get input values from connected nodes
+    const inputs = this.getNodeInputs(node.id);
+    node.data.config = {
+      ...node.data.config,
+      inputs,
     };
 
-    visit(startNodeId);
-    return order;
+    // Execute the node
+    results[node.id] = await this.executeNode(node);
+
+    // Execute connected output nodes
+    const outputNodes = this.getNodeOutputs(node.id);
+    for (const outputNodeId of outputNodes) {
+      const outputNode = this.nodes.find((n) => n.id === outputNodeId);
+      if (outputNode) {
+        await this.executeNodeAndDependencies(outputNode, results, visited);
+      }
+    }
   }
 } 
