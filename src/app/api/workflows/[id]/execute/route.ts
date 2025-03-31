@@ -7,16 +7,14 @@ import { AIService } from "@/lib/ai";
 import { SUBSCRIPTION_PLANS, SubscriptionTier } from "@/types/subscription";
 import { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
-interface RouteParams {
+// Next.js requires this exact pattern for route handlers
+type Props = {
   params: {
     id: string;
   };
-}
+};
 
-export async function POST(
-  req: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: Props) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
